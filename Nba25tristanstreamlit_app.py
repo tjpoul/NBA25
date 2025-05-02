@@ -213,7 +213,8 @@ def main():
             else:
                 winner, win_prob = away, p_away
             st.subheader("Predicted winner")
-            st.write(f"**{winner}** with a **{win_prob:.1%}** win probability")
+            st.metric(label="Predicted winner", value=f"{winner} ({win_prob:.1%})")
+            st.metric(label="No-vig odds",       value=f"{1/win_prob:.2f}")
 
 
     # ── MODEL TAB ------------------------------------------------------------
@@ -227,8 +228,8 @@ def main():
         st.markdown("""
 I use a 300 tree `RandomForestClassifier` to predict a confidence level for the Home team to win.
 The model is trained on a rolling window of games, excluding the first 5 games of each season.
-The model is pre-processed with `StandardScaler` to standardize the features for robustness of each feature.
-There is lots of room for improvement, off the top of my head I think I want to try xgBoost, as
+The model is pre-processed with `StandardScaler` for robustness of each feature.
+There is lots of room for improvement, off the top of my head I think I want to try `xgBoost`, as
 some features just aren't giving the model much information. 
                     
 The **5-fold cross-validation accuracy** of **64%** shows moderate generalization,  
@@ -274,14 +275,16 @@ Feel free to reach me at tpoul@scu.edu or on [LinkedIn](https://www.linkedin.com
 """)
         with st.expander("📚 1 · Data collection & cleaning"):
             st.markdown("""
-* **Source:** Basketball-Reference, 2004-05 → present.  
+* **Source:** Basketball-Reference, 2004-11-2 → 2025-4-30 (20 seasons).  
 * **Exclusions:** 2019-20 “bubble” games (Season == 2019).  
 * **Mapping:** legacy + fuzzy team-name mapping.
 """)
         with st.expander("📈 2 · Dynamic Elo ratings"):
             st.markdown(r"""
-* Teams start each season at Elo = 1000.  
-* Off-season “compression”: ±3 around 1000.  
+* Teams start in the 04-05 season at Elo = 1000.  
+* Off-season “compression”: ±3 around 1000, so they reset each new season at:
+  * 1000 + (median rank - (last season rank)) * 3
+  * This prevents drift from season to season, and keeps the elo somewhat centered, to account for offseason changes.
 * K-factor: games 1–5→20; 6–10→15; 11+→12.
 """)
         with st.expander("🛠️ 3 · Engineered features"):
@@ -302,6 +305,7 @@ Feel free to reach me at tpoul@scu.edu or on [LinkedIn](https://www.linkedin.com
 * **Training window:** excludes first 5 games.  
 * **Validation:** 5-fold CV ≈ **{cv_acc:.1%}**, hold-out ≈ **{hold_acc:.1%}**.  
 * **Label:** `home_win` (1 = home victory).
+* **Train-Test Split:** 95% train, 5% test.
 """)
         with st.expander("🆚 5 · Match-up grid & no-vig odds"):
             st.markdown("""
