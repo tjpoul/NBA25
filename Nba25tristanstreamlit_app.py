@@ -200,15 +200,21 @@ def main():
     with tab_game:
         st.header("Individual Game Predictions")
         home = st.selectbox("Home", CURRENT_TEAMS, key="g1")
-        away = st.selectbox("Away", [t for t in CURRENT_TEAMS if t!=home], key="g2")
-        gm = matchups[(matchups["Home"]==home)&(matchups["Away"]==away)]
+        away = st.selectbox("Away", [t for t in CURRENT_TEAMS if t != home], key="g2")
+        gm = matchups[(matchups["Home"] == home) & (matchups["Away"] == away)]
         if gm.empty:
             st.warning("No game prediction for that matchup.")
         else:
             row = gm.iloc[0]
-            win_prob = row["PredWinProb"] if row["PredWinner"] == home else 1 - row["PredWinProb"]
+            p_home = row["PredWinProb"]
+            p_away = 1 - p_home
+            if p_home >= p_away:
+                winner, win_prob = home, p_home
+            else:
+                winner, win_prob = away, p_away
             st.subheader("Predicted winner")
-            st.write(f"**{row['PredWinner']}** with a **{win_prob:.1%}** win probability")
+            st.write(f"**{winner}** with a **{win_prob:.1%}** win probability")
+
 
     # ── MODEL TAB ------------------------------------------------------------
     with tab_model:
@@ -219,10 +225,17 @@ def main():
         })
         st.table(metrics)
         st.markdown("""
+I use a 300 tree `RandomForestClassifier` to predict a confidence level for the Home team to win.
+The model is trained on a rolling window of games, excluding the first 5 games of each season.
+The model is pre-processed with `StandardScaler` to standardize the features for robustness of each feature.
+There is lots of room for improvement, off the top of my head I think I want to try xgBoost, as
+some features just aren't giving the model much information. 
+                    
 The **5-fold cross-validation accuracy** of **64%** shows moderate generalization,  
 and the **64% hold-out accuracy** confirms consistent performance on unseen data.  
 These results indicate the Random-Forest captures key signals but has room for improvement  
-through feature engineering or model tuning.
+through feature engineering or model tuning. I used a 95-5 train-test split, so the test data is about 
+1350 data points. 
                     
 The model uses 5 features:
                     
@@ -233,7 +246,6 @@ The model uses 5 features:
 | home_recent_wins    | Wins in last 5                      | Hot vs cold streaks     |
 | win_pct_diff        | Season W% diff                      | Macro strength          |
 | home_days_since_last| Rest days (capped at 30)            | Fatigue                 |
-| *visitor analogues* | … analogous for visitor             |                         |
 """)
 
     # ── DATA TAB -------------------------------------------------------------
