@@ -195,6 +195,20 @@ def main():
             st.table(probs.style.format("{:.1%}"))
             st.subheader("Win-in-X no-vig decimal odds")
             st.table(probs.applymap(lambda x: prob_to_odds(x) if x>0 else None))
+            # Determine most likely single-series outcome
+            outcomes = {
+                f"{hs} in 4": row["Prob_HigherSeed_WinIn4"],
+                f"{hs} in 5": row["Prob_HigherSeed_WinIn5"],
+                f"{hs} in 6": row["Prob_HigherSeed_WinIn6"],
+                f"{hs} in 7": row["Prob_HigherSeed_WinIn7"],
+                f"{ls} in 4": row["Prob_LowerSeed_WinIn4"],
+                f"{ls} in 5": row["Prob_LowerSeed_WinIn5"],
+                f"{ls} in 6": row["Prob_LowerSeed_WinIn6"],
+                f"{ls} in 7": row["Prob_LowerSeed_WinIn7"],
+            }
+            most_likely, prob = max(outcomes.items(), key=lambda x: x[1])
+            st.subheader("Most likely outcome")
+            st.markdown(f"**{most_likely}** at **{prob:.1%}**")
 
     # ── GAME TAB -------------------------------------------------------------
     with tab_game:
@@ -214,7 +228,11 @@ def main():
                 winner, win_prob = away, p_away
             st.subheader("Predicted winner")
             st.metric(label="Predicted winner", value=f"{winner} ({win_prob:.1%})")
-            st.metric(label="No-vig odds",       value=f"{1/win_prob:.2f}")
+            # favorite no-vig odds
+            st.metric(label="Favorite no-vig odds", value=f"{1/win_prob:.2f}")
+            # underdog no-vig odds
+            other_prob = p_away if winner == home else p_home
+            st.metric(label="Underdog no-vig odds", value=f"{1/other_prob:.2f}")
 
 
     # ── MODEL TAB ------------------------------------------------------------
@@ -252,7 +270,7 @@ The model uses 5 features:
     # ── DATA TAB -------------------------------------------------------------
     with tab_data:
         st.header("Elo Ratings Over Time")
-        default = ["Minnesota Timberwolves","Oklahoma City Thunder","Washington Wizards"]
+        default = ["Minnesota Timberwolves","Oklahoma City Thunder","San Antonio Spurs"]
         picks = st.multiselect("Teams", CURRENT_TEAMS, default=default)
         if picks:
             df_ts = elo_ts[elo_ts["Team"].isin(picks)]
