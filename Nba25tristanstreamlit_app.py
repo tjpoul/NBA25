@@ -223,11 +223,22 @@ The **5-fold cross-validation accuracy** of **64%** shows moderate generalizatio
 and the **64% hold-out accuracy** confirms consistent performance on unseen data.  
 These results indicate the Random-Forest captures key signals but has room for improvement  
 through feature engineering or model tuning.
+                    
+The model uses 5 features:
+                    
+| Feature             | Definition                          | Rationale               |
+|---------------------|-------------------------------------|-------------------------|
+| diff_elo            | Home Elo − Away Elo                 | Raw skill gap           |
+| home_recent_margin  | 5-game rolling avg scoring margin   | Momentum & fitness      |
+| home_recent_wins    | Wins in last 5                      | Hot vs cold streaks     |
+| win_pct_diff        | Season W% diff                      | Macro strength          |
+| home_days_since_last| Rest days (capped at 30)            | Fatigue                 |
+| *visitor analogues* | … analogous for visitor             |                         |
 """)
 
     # ── DATA TAB -------------------------------------------------------------
     with tab_data:
-        st.header("Elo Ratings – This & Last Season")
+        st.header("Elo Ratings Over Time")
         default = ["Minnesota Timberwolves","Oklahoma City Thunder","Washington Wizards"]
         picks = st.multiselect("Teams", CURRENT_TEAMS, default=default)
         if picks:
